@@ -1,6 +1,8 @@
 import React from "react"
 import PageLayout from "../layout/PageLayout"
 import Ibox from "../component/Ibox"
+import Web3 from "web3"
+import PatientRegistrarContract from "../contracts/PatientRegistrar.json"
 
 class Patient extends React.Component {
   constructor(props) {
@@ -26,7 +28,52 @@ class Patient extends React.Component {
   }
 
   connectToPatientRegistrar = () => {
-    console.log(this.state.contractHash)
+    this.web3 = new Web3(
+      new Web3.providers.HttpProvider("http://localhost:8545")
+    )
+    const PatientRegistrarContractABI = PatientRegistrarContract.abi
+    const patientRegistrarContractTx = this.state.contractHash
+    this.connectAs = "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1"
+    this.patientRegistrarRef = new this.web3.eth.Contract(
+      PatientRegistrarContractABI,
+      patientRegistrarContractTx,
+      { from: this.connectAs }
+    )
+
+    return this.patientRegistrarRef.methods
+      .viewPatientsList()
+      .call()
+      .then(
+        resp => {
+          console.log(resp)
+        },
+        e => console.log(e)
+      )
+  }
+
+  createPatient = () => {
+    const address = this.state.patientAddress
+    const gender = this.state.gender
+    const yearOfBirth = this.state.yearOfBirth
+
+    const gas = 167540
+    const gasPrice = "10000000000"
+
+    return this.patientRegistrarRef.methods
+      .registerPatientToRegistrar(address, gender, yearOfBirth)
+      .send({
+        from: this.connectAs, // PatientRegistrar가 추가,
+        gas,
+        gasPrice
+      })
+      .then(
+        resp => {
+          console.log(
+            `Successfully added Patient with tx hash ${resp.transactionHash}`
+          )
+        },
+        e => console.log(e)
+      )
   }
 
   render() {
@@ -119,6 +166,7 @@ class Patient extends React.Component {
                     <button
                       className="btn btn-sm btn-primary float-right m-t-n-xs"
                       type="submit"
+                      onClick={this.createPatient}
                     >
                       <strong>Create Patient</strong>
                     </button>
