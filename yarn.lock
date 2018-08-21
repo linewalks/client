@@ -3945,6 +3945,10 @@ watchpack@^1.4.0:
     graceful-fs "^4.1.2"
     neo-async "^2.5.0"
 
+"web3@git+https://github.com/ethereum/web3.js.git#newAbiLib":
+  version "1.0.0-beta.35"
+  resolved "git+https://github.com/ethereum/web3.js.git#9b297bc956f4e2c16f36d80cd48dc912cf12dcbb"
+
 webpack-dev-middleware@1.12.0:
   version "1.12.0"
   resolved "https://registry.yarnpkg.com/webpack-dev-middleware/-/webpack-dev-middleware-1.12.0.tgz#d34efefb2edda7e1d3b5dbe07289513219651709"

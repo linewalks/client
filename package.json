@@ -14,6 +14,7 @@
   "dependencies": {
     "next": "^6.1.1",
     "react": "^16.4.2",
-    "react-dom": "^16.4.2"
+    "react-dom": "^16.4.2",
+    "web3": "git+https://github.com/ethereum/web3.js.git#newAbiLib"
   }
 }
