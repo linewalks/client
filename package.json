@@ -12,9 +12,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "lodash": "^4.17.10",
     "next": "^6.1.1",
+    "next-redux-wrapper": "^2.0.0",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
+    "react-redux": "^5.0.7",
+    "redux": "^4.0.0",
     "web3": "git+https://github.com/ethereum/web3.js.git#newAbiLib"
   }
 }
