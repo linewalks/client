@@ -9,6 +9,7 @@ export default class QueryBlockchain extends React.Component {
       patientsList: []
     }
   }
+
   getPatientsList = () => {}
 
   render() {

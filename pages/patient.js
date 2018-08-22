@@ -3,6 +3,8 @@ import PageLayout from "../layout/PageLayout"
 import Ibox from "../component/Ibox"
 import Web3 from "web3"
 import PatientRegistrarContract from "../contracts/PatientRegistrar.json"
+import { connect } from "react-redux"
+import sampleAddresses from "../util/sampleAddresses"
 
 class Patient extends React.Component {
   constructor(props) {
@@ -11,7 +13,7 @@ class Patient extends React.Component {
       gender: "male",
       yearOfBirth: "",
       patientAddress: "",
-      contractHash: ""
+      contractHash: props.patientContractHash
     }
   }
 
@@ -39,6 +41,14 @@ class Patient extends React.Component {
       patientRegistrarContractTx,
       { from: this.connectAs }
     )
+
+    this.props.dispatch({
+      type: "CONNECT_TO_PATIENT_CONTRACT",
+      payload: {
+        contractHash: patientRegistrarContractTx,
+        abi: PatientRegistrarContractABI
+      }
+    })
 
     return this.patientRegistrarRef.methods
       .viewPatientsList()
@@ -105,6 +115,7 @@ class Patient extends React.Component {
                   type="text"
                   placeholder="Enter PatientRegistrar Contract #"
                   className="form-control"
+                  value={this.state.contractHash}
                   onChange={e =>
                     this.onValueChange("contractHash", e.target.value)
                   }
@@ -128,6 +139,17 @@ class Patient extends React.Component {
                 <form onSubmit={this.onSubmit}>
                   <div className="form-group">
                     <label>Patient Account Address</label>
+                    <select
+                      className="form-control m-b"
+                      onChange={e =>
+                        this.onValueChange("patientAddress", e.target.value)
+                      }
+                    >
+                      {sampleAddresses.map(addr => (
+                        <option value={addr}>{addr}</option>
+                      ))}
+                    </select>
+                    <h5>Or type in address directly</h5>
                     <input
                       type="text"
                       placeholder="Enter account address"
@@ -180,4 +202,7 @@ class Patient extends React.Component {
     )
   }
 }
-export default Patient
+export default connect(state => ({
+  patientContractHash: state.patientContract.contractHash,
+  patientContractAbi: state.patientContract.abi
+}))(Patient)
