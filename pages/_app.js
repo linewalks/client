@@ -1,8 +1,51 @@
 import App, { Container } from "next/app"
 import Head from "next/head"
 import React from "react"
+import { createStore } from "redux"
+import { Provider } from "react-redux"
+import withRedux from "next-redux-wrapper"
+import Web3 from "web3"
 
-export default class MyApp extends App {
+const INITIAL_STATE = {
+  patientContract: {
+    contractHash: "",
+    abi: undefined
+  },
+  providerContract: {
+    contractHash: "",
+    abi: undefined
+  }
+}
+
+const reducer = (state = INITIAL_STATE, { type, payload }) => {
+  if (type === "CONNECT_TO_PATIENT_CONTRACT") {
+    return {
+      ...state,
+      patientContract: {
+        contractHash: payload.contractHash,
+        abi: payload.abi
+      }
+    }
+  }
+  if (type === "CONNECT_TO_PROVIDER_CONTRACT") {
+    return {
+      ...state,
+      providerContract: {
+        contractHash: payload.contractHash,
+        abi: payload.abi
+      }
+    }
+  }
+  return {
+    ...state
+  }
+}
+
+const makeStore = (initialState, options) => {
+  return createStore(reducer, initialState)
+}
+
+class MyApp extends App {
   static async getInitialProps({ Component, router, ctx }) {
     let pageProps = {}
 
@@ -14,25 +57,15 @@ export default class MyApp extends App {
   }
 
   render() {
-    const { Component, pageProps } = this.props
+    const { Component, pageProps, store } = this.props
     return (
       <Container>
-        <Head>
-          <link
-            href="/static/css/bootstrap.min.css"
-            rel="stylesheet"
-            type="text/css"
-          />
-          <link href="/static/css/animate.css" rel="stylesheet" />
-          <link href="/static/css/style.css" rel="stylesheet" />
-
-          <link
-            href="/static/font-awesome/css/font-awesome.css"
-            rel="stylesheet"
-          />
-        </Head>
-        <Component {...pageProps} />
+        <Provider store={store}>
+          <Component {...pageProps} />
+        </Provider>
       </Container>
     )
   }
 }
+
+export default withRedux(makeStore)(MyApp)
