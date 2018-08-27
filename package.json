@@ -7,11 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "next",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "didactic": "didactic"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "didactic": "https://github.com/mcidl/didactic.git",
     "lodash": "^4.17.10",
     "next": "^6.1.1",
     "next-redux-wrapper": "^2.0.0",
