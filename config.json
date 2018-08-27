@@ -1,0 +1,12 @@
+{
+  "port": "9090",
+  "contractsPath": "../contracts/build/contracts",
+  "host": "http://localhost",
+  "networkId": "*",
+  "deployedContractsHashes": [
+    {
+      "PatientRegistrar": "0xAA...",
+      "Provider": "0xBB..."
+    }
+  ]
+}
