@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.18.0",
     "didactic": "https://github.com/mcidl/didactic.git",
     "lodash": "^4.17.10",
     "next": "^6.1.1",
