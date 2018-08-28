@@ -1,10 +1,10 @@
 import App, { Container } from "next/app"
 import Head from "next/head"
 import React from "react"
-import { createStore } from "redux"
 import { Provider } from "react-redux"
 import withRedux from "next-redux-wrapper"
 import Web3 from "web3"
+import makeStore from "../store"
 
 const INITIAL_STATE = {
   patientContract: {
@@ -15,34 +15,6 @@ const INITIAL_STATE = {
     contractHash: "",
     abi: undefined
   }
-}
-
-const reducer = (state = INITIAL_STATE, { type, payload }) => {
-  if (type === "CONNECT_TO_PATIENT_CONTRACT") {
-    return {
-      ...state,
-      patientContract: {
-        contractHash: payload.contractHash,
-        abi: payload.abi
-      }
-    }
-  }
-  if (type === "CONNECT_TO_PROVIDER_CONTRACT") {
-    return {
-      ...state,
-      providerContract: {
-        contractHash: payload.contractHash,
-        abi: payload.abi
-      }
-    }
-  }
-  return {
-    ...state
-  }
-}
-
-const makeStore = (initialState, options) => {
-  return createStore(reducer, initialState)
 }
 
 class MyApp extends App {

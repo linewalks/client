@@ -1,4 +1,9 @@
 node_modules
 .next
 .DS_Store
+<<<<<<< Updated upstream
 static
+=======
+
+static
+>>>>>>> Stashed changes
