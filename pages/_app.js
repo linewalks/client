@@ -5,27 +5,25 @@ import { Provider } from "react-redux"
 import withRedux from "next-redux-wrapper"
 import Web3 from "web3"
 import makeStore from "../store"
-
-const INITIAL_STATE = {
-  patientContract: {
-    contractHash: "",
-    abi: undefined
-  },
-  providerContract: {
-    contractHash: "",
-    abi: undefined
-  }
-}
+import axios from "axios"
 
 class MyApp extends App {
   static async getInitialProps({ Component, router, ctx }) {
-    let pageProps = {}
+    const resp = await axios.get("http://localhost:9090/network_information")
 
+    const networkInformation = {
+      ...resp.data
+    }
+
+    let networkMetaProps = {
+      ...networkInformation
+    }
+    let pageProps = {}
     if (Component.getInitialProps) {
       pageProps = await Component.getInitialProps(ctx)
     }
 
-    return { pageProps }
+    return { pageProps, ...networkMetaProps }
   }
 
   render() {
