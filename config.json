@@ -3,10 +3,8 @@
   "contractsPath": "../contracts/build/contracts",
   "host": "http://localhost:8545",
   "networkId": "*",
-  "deployedContractsHashes": [
-    {
-      "PatientRegistrar": "0xAA...",
-      "Provider": "0xBB..."
-    }
-  ]
+  "deployedContractsHashes": {
+    "PatientRegistrar": "0xAA...",
+    "Provider": "0xe78a0f7e598cc8b0bb87894b0f60dd2a88d6a8ab"
+  }
 }
