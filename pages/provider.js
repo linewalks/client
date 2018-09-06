@@ -7,7 +7,7 @@ import sampleAddresses from "../util/sampleAddresses"
 import axios from "axios"
 import TableComponents from "../component/Table"
 import { typesOfHospitals, typesOfClinics } from "../util/hospitalMetadata"
-import { getHospitalInfo, getIssuedClaims } from "../util/providerContract"
+import { getHospitalInfo, getIssuedClaims } from "../util/contractHelpers"
 const { Wrapper, Head, HeadColumn, Body, BodyColumn } = TableComponents
 import Router from "next/router"
 
