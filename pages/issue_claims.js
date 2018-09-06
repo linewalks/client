@@ -10,12 +10,14 @@ import { typesOfHospitals, typesOfClinics } from "../util/hospitalMetadata"
 import {
   getHospitalInfo,
   getIssuedClaims,
-  getPatients
+  getPatients,
+  sendTransactionToContract,
+  issueClaimForPatient
 } from "../util/contractHelpers"
 const { Wrapper, Head, HeadColumn, Body, BodyColumn, BodyRow } = TableComponents
-
-const gas = 1500000
-const gasPrice = "20000000000"
+import { gas, gasPrice } from "../util/settings"
+import isEmpty from "lodash/isEmpty"
+import TagsInput from "react-tagsinput"
 
 const hospitalInfoFields = [
   {
@@ -73,7 +75,14 @@ class IssueClaims extends React.Component {
       typeOfHospital: "",
       facilityAdminAddress: "",
       issuedClaims: [],
-      patients: []
+      patients: [],
+
+      // Issuing claims
+      patientToIssueClaim: "",
+      issueAmount: 0,
+      issueDesc: "",
+      issueType: "주성분",
+      issueTags: []
     }
     const { host } = props
     if (host) {
@@ -107,6 +116,7 @@ class IssueClaims extends React.Component {
 
     this.retrieveClaimsIssuedByProvider()
     this.retrievePatients()
+    // sendTransactionToContract()
 
     return getHospitalInfo(this.providerContractRef).then(hospitalInfo => {
       return this.setState({
@@ -156,28 +166,58 @@ class IssueClaims extends React.Component {
   }
 
   issueClaimForPatient = () => {
-    console.log(`Issuing Claim for Patient Addr: ${this.state.providerAddress}`)
-    return this.providerContractRef.methods
-      .renderClaimForPatient(this.state.providerAddress, [
-        "TYPE OF CLAIM",
-        10041004,
-        "Hello Description"
-      ])
-      .send({
-        from: this.state.providerAddress,
-        gas,
-        gasPrice
-      })
-      .then(
-        resp => {
-          console.log(
-            `Successfully issued claim for Patient with tx hash ${
-              resp.transactionHash
-            }`
-          )
-        },
-        e => console.log(e)
-      )
+    console.log(
+      `Issuing Claim for Patient Addr: ${this.state.patientToIssueClaim.code}`
+    )
+    return issueClaimForPatient(
+      this.providerContractRef,
+      this.state.facilityAdminAddress,
+      this.state.patientToIssueClaim.address,
+      [
+        this.state.issueType,
+        this.state.issueAmount,
+        // Stringify issue details
+        JSON.stringify({
+          tags: this.state.issueTags,
+          desc: this.state.issueDesc
+        })
+      ]
+    ).then(
+      resp => {
+        console.log(
+          `Successfully issued claim for Patient with tx hash ${resp}`
+        )
+        this.setState({
+          issueAmount: 0,
+          issueDesc: "",
+          issueType: "주성분",
+          patientToIssueClaim: {},
+          issueTags: []
+        })
+      },
+      err => console.log(err)
+    )
+    // return this.providerContractRef.methods
+    //   .renderClaimForPatient(this.state.providerAddress, [
+    //     "TYPE OF CLAIM",
+    //     10041004,
+    //     "Hello Description"
+    //   ])
+    //   .send({
+    //     from: this.state.providerAddress,
+    //     gas,
+    //     gasPrice
+    //   })
+    //   .then(
+    //     resp => {
+    //       console.log(
+    //         `Successfully issued claim for Patient with tx hash ${
+    //           resp.transactionHash
+    //         }`
+    //       )
+    //     },
+    //     e => console.log(e)
+    //   )
   }
 
   connectToProvider = async () => {
@@ -191,6 +231,140 @@ class IssueClaims extends React.Component {
       ...this.state,
       [field]: value
     })
+  }
+
+  renderClaimIssuingWidget = () => {
+    return (
+      <div>
+        <Ibox title="의료 명세서 발행">
+          <div className="row">
+            <div className="col-lg-4">
+              <div className="row mb-0">
+                <div className="col-sm-4">
+                  <dt>환자 코드</dt>
+                </div>
+                <div className="col-sm-8">
+                  <dd style={{ overflow: "hidden" }} className="mb-1">
+                    {this.state.patientToIssueClaim.code}
+                  </dd>
+                </div>
+              </div>
+
+              <div className="row mb-0">
+                <div className="col-sm-4">
+                  <dt>환자 성병</dt>
+                </div>
+                <div className="col-sm-8">
+                  <dd style={{ overflow: "hidden" }} className="mb-1">
+                    {this.state.patientToIssueClaim.gender}
+                  </dd>
+                </div>
+              </div>
+
+              <div className="row mb-0">
+                <div className="col-sm-4">
+                  <dt>환자 생년</dt>
+                </div>
+                <div className="col-sm-8">
+                  <dd style={{ overflow: "hidden" }} className="mb-1">
+                    {this.state.patientToIssueClaim.yearOfBirth}
+                  </dd>
+                </div>
+              </div>
+
+              <div className="row mb-0">
+                <div className="col-sm-4">
+                  <dt>환자 주소</dt>
+                </div>
+                <div className="col-sm-8">
+                  <dd style={{ overflow: "hidden" }} className="mb-1">
+                    {this.state.patientToIssueClaim.address}
+                  </dd>
+                </div>
+              </div>
+            </div>
+            <div className="col-lg-8">
+              <div className="form-group">
+                <div className="row">
+                  <div className="col-sm-6">
+                    <label>명세서 종류</label>
+                    <select
+                      value={this.state.issueType}
+                      onChange={e =>
+                        this.onValueChange("issueType", e.target.value)
+                      }
+                      className="form-control m-b"
+                      name="issueType"
+                    >
+                      <option value="주성분">주성분</option>
+                      <option value="의료행위">의료행위</option>
+                    </select>
+                  </div>
+                  <div className="col-sm-6">
+                    <label>청구 금액</label>
+                    <input
+                      value={this.state.issueAmount}
+                      onChange={e =>
+                        this.onValueChange("issueAmount", e.target.value)
+                      }
+                      type="number"
+                      className="form-control m-b"
+                      name="issueAmount"
+                    />
+                  </div>
+                </div>
+                <div className="row">
+                  <div className="col-sm-12">
+                    <label>청구 내용</label>
+                    <TagsInput
+                      inputProps={{ placeholder: "처방 내용" }}
+                      value={this.state.issueTags}
+                      onChange={tags => this.setState({ issueTags: tags })}
+                    />
+                  </div>
+                  <div className="col-sm-6" />
+                </div>
+                <div className="row">
+                  <div className="col-lg-12" style={{ marginTop: "5px" }}>
+                    <label>청구 내용</label>
+                    <input
+                      value={this.state.issueDesc}
+                      onChange={e =>
+                        this.onValueChange("issueDesc", e.target.value)
+                      }
+                      type="text"
+                      className="form-control m-b"
+                      name="issueDesc"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <button
+                  className="btn btn-secondary m-t float-right"
+                  style={{ marginLeft: "8px" }}
+                  onClick={() => this.setState({ patientToIssueClaim: {} })}
+                >
+                  <strong>취소</strong>
+                </button>
+
+                <button
+                  disabled={
+                    !this.state.issueAmount ||
+                    !this.state.issueType ||
+                    isEmpty(this.state.issueTags)
+                  }
+                  className="btn btn-primary m-t float-right"
+                  onClick={this.issueClaimForPatient}
+                >
+                  <strong>명세서 발행</strong>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Ibox>
+      </div>
+    )
   }
 
   render() {
@@ -270,6 +444,10 @@ class IssueClaims extends React.Component {
           </div>
         </div>
 
+        {!isEmpty(this.state.patientToIssueClaim)
+          ? this.renderClaimIssuingWidget()
+          : null}
+
         <div className="row">
           <div className="col-lg-12">
             <Ibox title="환자 목록">
@@ -279,6 +457,7 @@ class IssueClaims extends React.Component {
                   <HeadColumn>환자 식별자</HeadColumn>
                   <HeadColumn>환자 생년</HeadColumn>
                   <HeadColumn>환자 성별</HeadColumn>
+                  <HeadColumn>환자 주소</HeadColumn>
                   <HeadColumn>처방하기</HeadColumn>
                 </Head>
                 <Body>
@@ -288,8 +467,17 @@ class IssueClaims extends React.Component {
                       <BodyColumn>{patient.code}</BodyColumn>
                       <BodyColumn>{patient.yearOfBirth}</BodyColumn>
                       <BodyColumn>{patient.gender}</BodyColumn>
+                      <BodyColumn>{patient.address}</BodyColumn>
+
                       <BodyColumn>
-                        <button className="btn btn-outline btn-primary">
+                        <button
+                          className="btn btn-outline btn-primary"
+                          onClick={() =>
+                            this.setState({
+                              patientToIssueClaim: patient
+                            })
+                          }
+                        >
                           처방하기
                         </button>
                       </BodyColumn>

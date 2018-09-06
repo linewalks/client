@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@sentisis/react-tags-input": "^1.0.1",
     "axios": "^0.18.0",
     "didactic": "https://github.com/mcidl/didactic",
     "lodash": "^4.17.10",
@@ -21,6 +22,7 @@
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
     "react-redux": "^5.0.7",
+    "react-tagsinput": "^3.19.0",
     "redux": "^4.0.0",
     "web3": "git+https://github.com/ethereum/web3.js.git#newAbiLib"
   }

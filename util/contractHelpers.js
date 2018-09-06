@@ -37,12 +37,57 @@ export const getPatients = contractRef => {
     resp => {
       return Promise.resolve(
         resp.map(patient => ({
-          yearOfBirth: patient[0],
-          code: patient[1],
-          gender: patient[2]
+          yearOfBirth: patient[1],
+          code: patient[2],
+          gender: patient[3],
+          address: patient[0]
         }))
       )
     },
     err => Promise.reject(err)
+  )
+}
+
+export const sendTransactionToContract = (
+  contractRef,
+  method,
+  senderAddress,
+  args = [],
+  gas = 1500000,
+  gasPrice = "20000000000"
+) => {
+  return contractRef.methods[method](...args)
+    .send({
+      from: senderAddress,
+      gas,
+      gasPrice
+    })
+    .then(
+      resp => {
+        return Promise.resolve(resp.transactionHash)
+      },
+      e => {
+        console.log(e)
+        return Promise.reject(e)
+      }
+    )
+}
+
+export const issueClaimForPatient = (
+  contractRef,
+  senderAddress,
+  patientAddress,
+  claimFields = []
+) => {
+  return sendTransactionToContract(
+    contractRef,
+    "renderClaimForPatient",
+    senderAddress,
+    [patientAddress, claimFields]
+  ).then(
+    resp => {
+      return Promise.resolve(resp)
+    },
+    error => Promise.reject(error)
   )
 }
