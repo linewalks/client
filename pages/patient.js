@@ -128,7 +128,7 @@ class Patient extends React.Component {
           </div>
         </div>
         <div className="row">
-          <div className="col-lg-12">
+          <div className="col-lg-6">
             <Ibox title="First, connect to the blockchain">
               <div className="form-group">
                 <label>Patient Registrar Contract #</label>
@@ -144,7 +144,7 @@ class Patient extends React.Component {
               </div>
               <div>
                 <button
-                  className="btn btn-sm btn-primary float-right m-t-n-xs"
+                  className="btn btn-primary btn-block m-t"
                   onClick={this.connectToPatientRegistrar}
                 >
                   <strong>Connect to Patient Registrar</strong>
@@ -152,9 +152,7 @@ class Patient extends React.Component {
               </div>
             </Ibox>
           </div>
-        </div>
-        <div className="row">
-          <div className="col-lg-12">
+          <div className="col-lg-6">
             <Ibox title="Create Patient Identity">
               <div>
                 <form onSubmit={this.onSubmit}>
@@ -218,7 +216,7 @@ class Patient extends React.Component {
                   </div>
                   <div>
                     <button
-                      className="btn btn-sm btn-primary float-right m-t-n-xs"
+                      className="btn btn-primary btn-block m-t"
                       type="submit"
                       onClick={this.createPatient}
                     >
