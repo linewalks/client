@@ -10,10 +10,9 @@ export default {
     </thead>
   ),
   HeadColumn: ({ children }) => <th>{children}</th>,
-  Body: ({ children }) => (
-    <tbody>
-      <tr>{children}</tr>
-    </tbody>
-  ),
-  BodyColumn: ({ children }) => <td>{children}</td>
+  Body: ({ children }) => <tbody>{children}</tbody>,
+  BodyRow: ({ children }) => <tr>{children}</tr>,
+  BodyColumn: ({ children }) => (
+    <td style={{ verticalAlign: "middle" }}>{children}</td>
+  )
 }
