@@ -7,8 +7,12 @@ import sampleAddresses from "../util/sampleAddresses"
 import axios from "axios"
 import TableComponents from "../component/Table"
 import { typesOfHospitals, typesOfClinics } from "../util/hospitalMetadata"
-import { getHospitalInfo, getIssuedClaims } from "../util/contractHelpers"
-const { Wrapper, Head, HeadColumn, Body, BodyColumn } = TableComponents
+import {
+  getHospitalInfo,
+  getIssuedClaims,
+  getPatients
+} from "../util/contractHelpers"
+const { Wrapper, Head, HeadColumn, Body, BodyColumn, BodyRow } = TableComponents
 
 const gas = 1500000
 const gasPrice = "20000000000"
@@ -43,11 +47,16 @@ class IssueClaims extends React.Component {
     const networkInfo = networkInfoResponse.data
 
     const providerData = contractABIs.filter(abi => abi.name === "Provider")[0]
+    const patientRegistrarData = contractABIs.filter(
+      abi => abi.name === "PatientRegistrar"
+    )[0]
 
+    const patientRegistrarAbi = patientRegistrarData.abi
     const providerAbi = providerData.abi
     const providerBytecode = providerData.bytecode
 
     return {
+      patientRegistrarAbi,
       providerAbi,
       providerBytecode,
       port: networkInfo.port,
@@ -59,12 +68,12 @@ class IssueClaims extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      // providerAddress: sampleAddresses[0],
       facilityName: "",
       typeOfClinic: "",
       typeOfHospital: "",
-      facilityAdminAddress: ""
-      // accountAddressToLoginAs: sampleAddresses[0]
+      facilityAdminAddress: "",
+      issuedClaims: [],
+      patients: []
     }
     const { host } = props
     if (host) {
@@ -73,16 +82,31 @@ class IssueClaims extends React.Component {
   }
 
   componentDidMount = () => {
-    const { providerAbi, providerContractHash, providerAddress } = this.props
+    const {
+      providerAbi,
+      providerContractHash,
+      providerAddress,
+      patientRegistrarAbi,
+      patientContractHash
+    } = this.props
     if (!providerContractHash || !providerAddress) {
       console.log(providerContractHash, providerAddress)
       window.alert("Provider로 접속하기 위한 정보가 제공되지 않았습니다.")
     }
     this.providerContractRef = new this.web3.eth.Contract(
       providerAbi,
-      this.props.providerContractHash,
-      { from: this.props.providerAddress }
+      providerContractHash,
+      { from: providerAddress }
     )
+
+    this.patientContractRef = new this.web3.eth.Contract(
+      patientRegistrarAbi,
+      patientContractHash,
+      { from: providerAddress }
+    )
+
+    this.retrieveClaimsIssuedByProvider()
+    this.retrievePatients()
 
     return getHospitalInfo(this.providerContractRef).then(hospitalInfo => {
       return this.setState({
@@ -94,25 +118,13 @@ class IssueClaims extends React.Component {
     })
   }
 
-  fetchProviderData = () => {}
-  connectAsProvider = () => {
-    const { providerAbi } = this.props
-    // Overwrite providerContractRef
-    this.providerContractRef = new this.web3.eth.Contract(
-      providerAbi,
-      this.state.providerContractHash,
-      { from: this.state.accountAddressToLoginAs }
-    )
-
-    this.retrieveClaimsIssuesByProvider()
+  retrievePatients = () => {
+    return getPatients(this.patientContractRef).then(patients => {
+      this.setState({ patients: patients })
+    })
   }
 
-  retrieveClaimsIssuesByProvider = () => {
-    getHospitalInfo(this.providerContractRef).then(resp => {
-      console.log("From Helper")
-      console.log(resp)
-    })
-
+  retrieveClaimsIssuedByProvider = () => {
     return getIssuedClaims(this.providerContractRef).then(
       resp => {
         const claims = resp.map(claim => {
@@ -232,7 +244,7 @@ class IssueClaims extends React.Component {
                       <span>누적 처방건수</span>
                       <small className="float-right">32 건</small>
                     </div>
-                    <div class="progress progress-small">
+                    <div className="progress progress-small">
                       <div style={{ width: "60%" }} class="progress-bar" />
                     </div>
 
@@ -260,19 +272,29 @@ class IssueClaims extends React.Component {
 
         <div className="row">
           <div className="col-lg-12">
-            <Ibox title="Patients List">
+            <Ibox title="환자 목록">
               <Wrapper>
                 <Head>
                   <HeadColumn>#</HeadColumn>
-                  <HeadColumn>Name</HeadColumn>
-                  <HeadColumn>Year of Birth</HeadColumn>
-                  <HeadColumn>Gender</HeadColumn>
+                  <HeadColumn>환자 식별자</HeadColumn>
+                  <HeadColumn>환자 생년</HeadColumn>
+                  <HeadColumn>환자 성별</HeadColumn>
+                  <HeadColumn>처방하기</HeadColumn>
                 </Head>
                 <Body>
-                  <BodyColumn>1</BodyColumn>
-                  <BodyColumn>Paul</BodyColumn>
-                  <BodyColumn>1986</BodyColumn>
-                  <BodyColumn>Male</BodyColumn>
+                  {this.state.patients.map((patient, i) => (
+                    <BodyRow>
+                      <BodyColumn>{i + 1}</BodyColumn>
+                      <BodyColumn>{patient.code}</BodyColumn>
+                      <BodyColumn>{patient.yearOfBirth}</BodyColumn>
+                      <BodyColumn>{patient.gender}</BodyColumn>
+                      <BodyColumn>
+                        <button className="btn btn-outline btn-primary">
+                          처방하기
+                        </button>
+                      </BodyColumn>
+                    </BodyRow>
+                  ))}
                 </Body>
               </Wrapper>
             </Ibox>
@@ -286,5 +308,5 @@ class IssueClaims extends React.Component {
 export default connect(state => ({
   providerAddress: state.providerContract.address,
   providerContractHash: state.providerContract.contractHash,
-  patientContractHash: state.patientContract.contrachHash
+  patientContractHash: state.patientContract.contractHash
 }))(IssueClaims)
