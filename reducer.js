@@ -5,7 +5,8 @@ const INITIAL_STATE = {
   },
   providerContract: {
     contractHash: "",
-    abi: undefined
+    abi: undefined,
+    address: ""
   }
 }
 
@@ -23,8 +24,20 @@ const reducer = (state = INITIAL_STATE, { type, payload }) => {
     return {
       ...state,
       providerContract: {
+        ...state.providerContract,
         contractHash: payload.contractHash,
         abi: payload.abi
+      }
+    }
+  }
+  if (type === "CONNECT_AS_PROVIDER") {
+    console.log("ACTION CALLED")
+    return {
+      ...state,
+      providerContract: {
+        ...state.providerContract,
+        contractHash: payload.hash,
+        address: payload.address
       }
     }
   }
