@@ -7,13 +7,14 @@ import sampleAddresses from "../util/sampleAddresses"
 import axios from "axios"
 import TableComponents from "../component/Table"
 import { typesOfHospitals, typesOfClinics } from "../util/hospitalMetadata"
-
+import { getHospitalInfo, getIssuedClaims } from "../util/providerContract"
 const { Wrapper, Head, HeadColumn, Body, BodyColumn } = TableComponents
+import Router from "next/router"
 
 const gas = 1500000
 const gasPrice = "20000000000"
 
-class Provider extends React.Component {
+class HealthProvider extends React.Component {
   static async getInitialProps({ ctx }) {
     const resp = await axios.get("http://localhost:9090/contracts_meta")
     const networkInfoResponse = await axios.get(
@@ -44,7 +45,7 @@ class Provider extends React.Component {
       facilityName: "",
       typeOfClinic: typesOfClinics[0],
       typeOfHospital: typesOfHospitals[0],
-      accountAddressToLoginAs: ""
+      accountAddressToLoginAs: sampleAddresses[0]
     }
     const { host } = props
     if (host) {
@@ -60,7 +61,59 @@ class Provider extends React.Component {
     this.state.typeOfHospital
 
   connectAsProvider = () => {
-    accountAddressToLoginAs
+    const { providerAbi, dispatch } = this.props
+    // Overwrite providerContractRef
+    this.providerContractRef = new this.web3.eth.Contract(
+      providerAbi,
+      this.state.providerContractHash,
+      { from: this.state.accountAddressToLoginAs }
+    )
+
+    return dispatch({
+      type: "CONNECT_AS_PROVIDER",
+      payload: {
+        hash: this.state.providerContractHash,
+        address: this.state.accountAddressToLoginAs
+      }
+    })
+    // Router.push("/issue_claims")
+    // this.retrieveClaimsIssuesByProvider()
+  }
+
+  retrieveClaimsIssuesByProvider = () => {
+    getHospitalInfo(this.providerContractRef).then(resp => {
+      console.log("From Helper")
+      console.log(resp)
+    })
+
+    return getIssuedClaims(this.providerContractRef).then(
+      resp => {
+        const claims = resp.map(claim => {
+          const [
+            type,
+            cost,
+            description,
+            patientAddr,
+            createdAt,
+            isValidated
+          ] = claim
+          return {
+            type,
+            cost,
+            description,
+            patientAddr,
+            createdAt,
+            isValidated
+          }
+        })
+        console.log(claims)
+        this.setState({
+          issuedClaims: claims
+        })
+        return Promise.resolve(claims)
+      },
+      err => console.log(err)
+    )
   }
 
   createProviderAccount = async () => {
@@ -93,7 +146,7 @@ class Provider extends React.Component {
     } catch (e) {
       console.log(e)
     }
-
+    alert("Provider Contract Created: " + contractInstance.options.address)
     this.setState({
       providerContractHash: contractInstance.options.address
     })
@@ -152,40 +205,40 @@ class Provider extends React.Component {
       <PageLayout>
         <div className="row">
           <div className="col-lg-12">
-            <Ibox title="Healthcare Provider">
+            <Ibox title="Create identity as a Healthcare Provider">
               <div>
-                <h5>
-                  In this section, you can create your identity as a Healthcare
-                  Provider
-                </h5>
-                <h5>
-                  Your credentials, as well as the details of your facility,
-                  will be created and saved on the blockchain
-                </h5>
-                <h5>Be careful not to forget your contract address</h5>
+                <h4>
+                  본 페이지에서는 의료 서비스 제공자로 Identity를 만들 수
+                  있습니다.
+                </h4>
+                <h4>
+                  작성하시는 제공자 정보는 블록체인 상에 저장되며 향후에
+                  환자들에 대한 진단 및 청구 명세서를 작성할 수 있습니다.
+                </h4>
+                <h4>생성되는 Contract Hash는 분실되지 않도록 유의하세요</h4>
               </div>
             </Ibox>
           </div>
         </div>
 
         <div className="row">
-          <div className="col-lg-12">
-            <Ibox title="First, register as a Healthcare provider">
+          <div className="col-lg-6">
+            <Ibox title="의료 서비스 제공자 Identity 생성">
               <div className="form-group">
                 <div className="row">
-                  <div className="col-lg-6">
-                    <label>Name of facility</label>
+                  <div className="col-lg-12">
+                    <label>병원 이름</label>
                     <input
                       type="text"
                       placeholder="Enter Name"
-                      className="form-control"
+                      className="form-control m-b"
                       onChange={e =>
                         this.onValueChange("facilityName", e.target.value)
                       }
                       value={this.state.facilityName}
                     />
                   </div>
-                  <div className="col-lg-6">
+                  <div className="col-lg-12">
                     <label>Provider Administrator Address</label>
                     <select
                       className="form-control m-b"
@@ -199,10 +252,8 @@ class Provider extends React.Component {
                       ))}
                     </select>
                   </div>
-                </div>
-                <div className="row" style={{ marginTop: "10px" }}>
-                  <div className="col-lg-6">
-                    <label>Hospital category</label>
+                  <div className="col-lg-12">
+                    <label>병원 분류</label>
                     <select
                       className="form-control m-b"
                       onChange={e =>
@@ -215,8 +266,8 @@ class Provider extends React.Component {
                       ))}
                     </select>
                   </div>
-                  <div className="col-lg-6">
-                    <label>Clinical field</label>
+                  <div className="col-lg-12">
+                    <label>진단과</label>
                     <select
                       className="form-control m-b"
                       onChange={e =>
@@ -230,22 +281,20 @@ class Provider extends React.Component {
                     </select>
                   </div>
                 </div>
-              </div>
-              <div>
-                <button
-                  className="btn btn-primary btn-block m-t"
-                  onClick={this.createProviderAccount}
-                  disabled={!this.isProvderAccountInputValid()}
-                >
-                  <strong>Create Provider Account</strong>
-                </button>
+                <div>
+                  <button
+                    className="btn btn-primary btn-block m-t"
+                    onClick={this.createProviderAccount}
+                    disabled={!this.isProvderAccountInputValid()}
+                  >
+                    <strong>의료 서비스 제공자 Identity 생성</strong>
+                  </button>
+                </div>
               </div>
             </Ibox>
           </div>
-        </div>
-        <div className="row">
-          <div className="col-lg-12">
-            <Ibox title="Login as Healthcare Provider">
+          <div className="col-lg-6">
+            <Ibox title="이미 Identity를 생성한 경우, 아래 내용을 기입하여 네트워크에 접속하세요">
               <div className="form-group">
                 <div className="row">
                   <div className="col-lg-12">
@@ -267,27 +316,25 @@ class Provider extends React.Component {
               </div>
               <div className="form-group">
                 <div className="row">
-                  <div className="col-lg-6">
-                    <label>Provider Account Address</label>
-                    <input
-                      type="text"
-                      placeholder="Enter account address registered in blockchain"
-                      className="form-control"
+                  <div className="col-lg-12">
+                    <label>Provider Administrator Address</label>
+                    <select
+                      className="form-control m-b"
                       onChange={e =>
                         this.onValueChange(
                           "accountAddressToLoginAs",
                           e.target.value
                         )
                       }
-                      // 기본으로는 providerAddress와 동일하게 세팅 굳이 입력하면 overwrite
-                      value={
-                        this.state.accountAddressToLoginAs ||
-                        this.state.providerAddress
-                      }
-                    />
+                      value={this.state.accountAddressToLoginAs}
+                    >
+                      {sampleAddresses.map(addr => (
+                        <option value={addr}>{addr}</option>
+                      ))}
+                    </select>
                   </div>
                   <div
-                    className="col-lg-6"
+                    className="col-lg-12"
                     onClick={() =>
                       alert(
                         "Signing transaction functionality is not yet supported..."
@@ -313,33 +360,13 @@ class Provider extends React.Component {
                   className="btn btn-primary btn-block m-t"
                   onClick={this.connectAsProvider}
                   disabled={
-                    !this.state.accountAddressToLoginAs ||
-                    !this.state.providerContractHash
+                    !this.state.providerContractHash ||
+                    !this.state.accountAddressToLoginAs
                   }
                 >
-                  <strong>Connect as Provider</strong>
+                  <strong>의료 서비스 제공자로 네트워크 연결</strong>
                 </button>
               </div>
-            </Ibox>
-          </div>
-        </div>
-        <div className="row">
-          <div className="col-lg-12">
-            <Ibox title="Patient List">
-              <Wrapper>
-                <Head>
-                  <HeadColumn>#</HeadColumn>
-                  <HeadColumn>Name</HeadColumn>
-                  <HeadColumn>Year of Birth</HeadColumn>
-                  <HeadColumn>Gender</HeadColumn>
-                </Head>
-                <Body>
-                  <BodyColumn>1</BodyColumn>
-                  <BodyColumn>Paul</BodyColumn>
-                  <BodyColumn>1986</BodyColumn>
-                  <BodyColumn>Male</BodyColumn>
-                </Body>
-              </Wrapper>
             </Ibox>
           </div>
         </div>
@@ -348,4 +375,4 @@ class Provider extends React.Component {
   }
 }
 
-export default Provider
+export default connect()(HealthProvider)
