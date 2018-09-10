@@ -2,24 +2,46 @@ import React from "react"
 import PageLayout from "../layout/PageLayout"
 import Ibox from "../component/Ibox"
 import Web3 from "web3"
-import PatientRegistrarContract from "../contracts/PatientRegistrar.json"
 import { connect } from "react-redux"
 import sampleAddresses from "../util/sampleAddresses"
+import axios from "axios"
 
 class Patient extends React.Component {
+  static async getInitialProps({ ctx }) {
+    const resp = await axios.get("http://localhost:9090/contracts_meta")
+    const networkInfoResponse = await axios.get(
+      "http://localhost:9090/network_information"
+    )
+    const contractABIs = resp.data || []
+    const networkInfo = networkInfoResponse.data
+
+    const patientRegistrarData = contractABIs.filter(
+      abi => abi.name === "PatientRegistrar"
+    )[0]
+
+    const patientRegistrarAbi = patientRegistrarData.abi
+    console.log(networkInfo.deployedContractsHashes)
+    return {
+      patientRegistrarAbi,
+      port: networkInfo.port,
+      host: networkInfo.host,
+      networkId: networkInfo.networkId,
+      contractHash: networkInfo.deployedContractsHashes
+    }
+  }
   constructor(props) {
     super(props)
     this.state = {
       gender: "male",
       yearOfBirth: "",
       patientAddress: "",
-      contractHash: props.patientContractHash
+      patientCode: "",
+      contractHash: props.contractHash.PatientRegistrar
     }
   }
 
   onSubmit = e => {
     e.preventDefault()
-    console.log(this.state.gender, this.state.yearOfBirth)
   }
 
   onValueChange = (field, value) => {
@@ -30,14 +52,12 @@ class Patient extends React.Component {
   }
 
   connectToPatientRegistrar = () => {
-    this.web3 = new Web3(
-      new Web3.providers.HttpProvider("http://localhost:8545")
-    )
-    const PatientRegistrarContractABI = PatientRegistrarContract.abi
+    const { host, patientRegistrarAbi } = this.props
+    this.web3 = new Web3(new Web3.providers.HttpProvider(host))
     const patientRegistrarContractTx = this.state.contractHash
     this.connectAs = "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1"
     this.patientRegistrarRef = new this.web3.eth.Contract(
-      PatientRegistrarContractABI,
+      patientRegistrarAbi,
       patientRegistrarContractTx,
       { from: this.connectAs }
     )
@@ -46,7 +66,7 @@ class Patient extends React.Component {
       type: "CONNECT_TO_PATIENT_CONTRACT",
       payload: {
         contractHash: patientRegistrarContractTx,
-        abi: PatientRegistrarContractABI
+        abi: patientRegistrarAbi
       }
     })
 
@@ -65,12 +85,13 @@ class Patient extends React.Component {
     const address = this.state.patientAddress
     const gender = this.state.gender
     const yearOfBirth = this.state.yearOfBirth
+    const patientCode = this.state.patientCode
 
-    const gas = 167540
+    const gas = 267540
     const gasPrice = "10000000000"
 
     return this.patientRegistrarRef.methods
-      .registerPatientToRegistrar(address, gender, yearOfBirth)
+      .registerPatientToRegistrar(address, patientCode, gender, yearOfBirth)
       .send({
         from: this.connectAs, // PatientRegistrar가 추가,
         gas,
@@ -81,6 +102,11 @@ class Patient extends React.Component {
           console.log(
             `Successfully added Patient with tx hash ${resp.transactionHash}`
           )
+          this.setState({
+            yearOfBirth: "",
+            patientCode: ""
+          })
+          alert("환자 등록 되었습니다")
         },
         e => console.log(e)
       )
@@ -107,7 +133,7 @@ class Patient extends React.Component {
           </div>
         </div>
         <div className="row">
-          <div className="col-lg-12">
+          <div className="col-lg-6">
             <Ibox title="First, connect to the blockchain">
               <div className="form-group">
                 <label>Patient Registrar Contract #</label>
@@ -123,7 +149,7 @@ class Patient extends React.Component {
               </div>
               <div>
                 <button
-                  className="btn btn-sm btn-primary float-right m-t-n-xs"
+                  className="btn btn-primary btn-block m-t"
                   onClick={this.connectToPatientRegistrar}
                 >
                   <strong>Connect to Patient Registrar</strong>
@@ -131,9 +157,7 @@ class Patient extends React.Component {
               </div>
             </Ibox>
           </div>
-        </div>
-        <div className="row">
-          <div className="col-lg-12">
+          <div className="col-lg-6">
             <Ibox title="Create Patient Identity">
               <div>
                 <form onSubmit={this.onSubmit}>
@@ -156,6 +180,17 @@ class Patient extends React.Component {
                       className="form-control"
                       onChange={e =>
                         this.onValueChange("patientAddress", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Patient Code</label>
+                    <input
+                      type="text"
+                      placeholder="Enter patient code"
+                      className="form-control"
+                      onChange={e =>
+                        this.onValueChange("patientCode", e.target.value)
                       }
                     />
                   </div>
@@ -186,7 +221,7 @@ class Patient extends React.Component {
                   </div>
                   <div>
                     <button
-                      className="btn btn-sm btn-primary float-right m-t-n-xs"
+                      className="btn btn-primary btn-block m-t"
                       type="submit"
                       onClick={this.createPatient}
                     >
