@@ -5,6 +5,6 @@
   "networkId": "*",
   "deployedContractsHashes": {
     "PatientRegistrar": "0xe78a0f7e598cc8b0bb87894b0f60dd2a88d6a8ab",
-    "Provider": "0xe982e462b094850f12af94d21d470e21be9d0e9c"
+    "Provider": "0x9561C133DD8580860B6b7E504bC5Aa500f0f06a7"
   }
 }

@@ -20,13 +20,13 @@ class Patient extends React.Component {
     )[0]
 
     const patientRegistrarAbi = patientRegistrarData.abi
-
+    console.log(networkInfo.deployedContractsHashes)
     return {
       patientRegistrarAbi,
       port: networkInfo.port,
       host: networkInfo.host,
       networkId: networkInfo.networkId,
-      providerContractHash: networkInfo.deployedContractsHashes.PatientRegistrar
+      contractHash: networkInfo.deployedContractsHashes
     }
   }
   constructor(props) {
@@ -36,7 +36,7 @@ class Patient extends React.Component {
       yearOfBirth: "",
       patientAddress: "",
       patientCode: "",
-      contractHash: props.patientContractHash
+      contractHash: props.contractHash.PatientRegistrar
     }
   }
 
@@ -102,6 +102,11 @@ class Patient extends React.Component {
           console.log(
             `Successfully added Patient with tx hash ${resp.transactionHash}`
           )
+          this.setState({
+            yearOfBirth: "",
+            patientCode: ""
+          })
+          alert("환자 등록 되었습니다")
         },
         e => console.log(e)
       )

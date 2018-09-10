@@ -194,6 +194,7 @@ class IssueClaims extends React.Component {
           patientToIssueClaim: {},
           issueTags: []
         })
+        this.retrieveClaimsIssuedByProvider()
       },
       err => console.log(err)
     )
@@ -391,9 +392,19 @@ class IssueClaims extends React.Component {
           <div className="col-lg-12">
             <Ibox>
               <div className="row">
-                <div className="col-lg-12">
+                <div className="col-lg-10">
                   <div className="m-b-md">
                     <h2>의료서비스 제공자 정보</h2>
+                  </div>
+                </div>
+                <div className="col-lg-2">
+                  <div>
+                    <button
+                      onClick={this.retrieveClaimsIssuedByProvider}
+                      className="btn btn-success btn-rounded"
+                    >
+                      처방 내역 조회
+                    </button>
                   </div>
                 </div>
               </div>
@@ -416,7 +427,9 @@ class IssueClaims extends React.Component {
                   <div>
                     <div className="m-b-1 m-t">
                       <span>누적 처방건수</span>
-                      <small className="float-right">32 건</small>
+                      <small className="float-right">
+                        {this.state.issuedClaims.length} 건
+                      </small>
                     </div>
                     <div className="progress progress-small">
                       <div style={{ width: "60%" }} class="progress-bar" />
@@ -424,7 +437,14 @@ class IssueClaims extends React.Component {
 
                     <div className="m-b-1 m-t">
                       <span>누적 환자수</span>
-                      <small className="float-right">15</small>
+                      <small className="float-right">
+                        {
+                          new Set(
+                            this.state.issuedClaims.map(c => c.patientAddr)
+                          ).size
+                        }{" "}
+                        명
+                      </small>
                     </div>
                     <div className="progress progress-small">
                       <div style={{ width: "50%" }} className="progress-bar" />
@@ -432,7 +452,13 @@ class IssueClaims extends React.Component {
 
                     <div className="m-b-1 m-t">
                       <span>누적 처방금액</span>
-                      <small className="float-right">4200000</small>
+                      <small className="float-right">
+                        {this.state.issuedClaims.length &&
+                          this.state.issuedClaims
+                            .map(c => Number(c.cost))
+                            .reduce((a, b) => a + b)}{" "}
+                        원
+                      </small>
                     </div>
                     <div className="progress progress-small">
                       <div style={{ width: "40%" }} className="progress-bar" />
